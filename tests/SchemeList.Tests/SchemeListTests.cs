@@ -296,4 +296,34 @@ public class SchemeListTests
         var rev = largeList.Reverse();
         Assert.Equal(count - 1, rev.Car);
     }
+
+    [Fact]
+    public void TestStaticAPI()
+    {
+        var list = SchemeList.Create([1, 2, 3, 4, 5]);
+
+        Assert.False(SchemeList.IsEmpty(list));
+        Assert.Equal(1, SchemeList.Car(list));
+        Assert.Equal(1, SchemeList.Head(list));
+        Assert.Equal(SchemeList.Create([2, 3, 4, 5]), SchemeList.Cdr(list));
+        Assert.Equal(SchemeList.Create([2, 3, 4, 5]), SchemeList.Tail(list));
+        Assert.Equal(5, SchemeList.Length(list));
+        Assert.Equal(5, SchemeList.Count(list));
+        Assert.Equal(3, SchemeList.Item(list, 2));
+
+        Assert.Equal(15, SchemeList.Fold(list, 0, (acc, x) => acc + x));
+        Assert.Equal(15, SchemeList.FoldRight(list, 0, (x, acc) => x + acc));
+
+        var visited = new List<int>();
+        SchemeList.ForEach(list, x => visited.Add(x));
+        Assert.Equal(new[] { 1, 2, 3, 4, 5 }, visited);
+
+        Assert.Equal(SchemeList.Create([5, 4, 3, 2, 1]), SchemeList.Reverse(list));
+        Assert.Equal(SchemeList.Create([2, 4, 6, 8, 10]), SchemeList.Map(list, x => x * 2));
+        Assert.Equal(SchemeList.Create([2, 4]), SchemeList.Filter(list, x => x % 2 == 0));
+        Assert.Equal(SchemeList.Create([2, 3]), SchemeList.Slice(list, 1, 2));
+
+        Assert.Throws<ArgumentNullException>(() => SchemeList.Car<int>(null!));
+        Assert.Throws<ArgumentNullException>(() => SchemeList.Cdr<int>(null!));
+    }
 }

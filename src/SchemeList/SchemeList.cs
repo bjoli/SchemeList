@@ -546,19 +546,149 @@ public static class SchemeList
     /// Scheme primitive: Returns the Car (first element) of the list.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T Car<T>(SchemeList<T> list) => list.Car;
+    public static T Car<T>(SchemeList<T> list)
+    {
+        ArgumentNullException.ThrowIfNull(list);
+        return list.Car;
+    }
 
     /// <summary>
     /// Scheme primitive: Returns the Cdr (tail) of the list.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static SchemeList<T> Cdr<T>(SchemeList<T> list) => list.Cdr;
+    public static SchemeList<T> Cdr<T>(SchemeList<T> list)
+    {
+        ArgumentNullException.ThrowIfNull(list);
+        return list.Cdr;
+    }
+
+    /// <summary>
+    /// Alias for <see cref="Car{T}(SchemeList{T})"/>.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static T Head<T>(SchemeList<T> list) => Car(list);
+
+    /// <summary>
+    /// Alias for <see cref="Cdr{T}(SchemeList{T})"/>.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static SchemeList<T> Tail<T>(SchemeList<T> list) => Cdr(list);
 
     /// <summary>
     /// Scheme primitive: Returns true if the list is empty.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsEmpty<T>(SchemeList<T> list) => list.IsEmpty;
+    public static bool IsEmpty<T>(SchemeList<T> list)
+    {
+        ArgumentNullException.ThrowIfNull(list);
+        return list.IsEmpty;
+    }
+
+    /// <summary>
+    /// Returns the length of the list.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int Length<T>(SchemeList<T> list)
+    {
+        ArgumentNullException.ThrowIfNull(list);
+        return list.Length;
+    }
+
+    /// <summary>
+    /// Alias for <see cref="Length{T}(SchemeList{T})"/>.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int Count<T>(SchemeList<T> list) => Length(list);
+
+    /// <summary>
+    /// Gets the element at the specified zero-based index.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static T Item<T>(SchemeList<T> list, int index)
+    {
+        ArgumentNullException.ThrowIfNull(list);
+        return list[index];
+    }
+
+    /// <summary>
+    /// Fast, non-recursive left fold over the list elements.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static TState Fold<T, TState>(SchemeList<T> list, TState initial, Func<TState, T, TState> folder)
+    {
+        ArgumentNullException.ThrowIfNull(list);
+        return list.Fold(initial, folder);
+    }
+
+    /// <summary>
+    /// Fast, stack-safe right fold over the list elements.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static TState FoldRight<T, TState>(SchemeList<T> list, TState initial, Func<T, TState, TState> folder)
+    {
+        ArgumentNullException.ThrowIfNull(list);
+        return list.FoldRight(initial, folder);
+    }
+
+    /// <summary>
+    /// Executes the specified action on each element of the list in order.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void ForEach<T>(SchemeList<T> list, Action<T> action)
+    {
+        ArgumentNullException.ThrowIfNull(list);
+        list.ForEach(action);
+    }
+
+    /// <summary>
+    /// Executes the specified action on each element along with its zero-based index.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void ForEach<T>(SchemeList<T> list, Action<T, int> action)
+    {
+        ArgumentNullException.ThrowIfNull(list);
+        list.ForEach(action);
+    }
+
+    /// <summary>
+    /// Reverses the list in O(N) time.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static SchemeList<T> Reverse<T>(SchemeList<T> list)
+    {
+        ArgumentNullException.ThrowIfNull(list);
+        return list.Reverse();
+    }
+
+    /// <summary>
+    /// Maps each element using the selector function to create a new list.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static SchemeList<U> Map<T, U>(SchemeList<T> list, Func<T, U> selector)
+    {
+        ArgumentNullException.ThrowIfNull(list);
+        return list.Map(selector);
+    }
+
+    /// <summary>
+    /// Filters the list based on a predicate.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static SchemeList<T> Filter<T>(SchemeList<T> list, Func<T, bool> predicate)
+    {
+        ArgumentNullException.ThrowIfNull(list);
+        return list.Filter(predicate);
+    }
+
+    /// <summary>
+    /// Slices the list given a start index and length.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static SchemeList<T> Slice<T>(SchemeList<T> list, int start, int length)
+    {
+        ArgumentNullException.ThrowIfNull(list);
+        return list.Slice(start, length);
+    }
 
     /// <summary>
     /// Collection builder method supporting C# 12 collection expressions: `SchemeList&lt;int&gt; list = [1, 2, 3];`
