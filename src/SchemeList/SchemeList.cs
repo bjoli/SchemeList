@@ -47,9 +47,124 @@ public abstract class SchemeList<T> : IEnumerable<T>, IEquatable<SchemeList<T>>
     public static SchemeList<T> Empty => Nil<T>.Instance;
 
     /// <summary>
-    /// Deconstructs the list into positional pattern parameters (isEmpty, car, cdr).
+    /// Deconstructs the list into boolean state, car, and cdr.
     /// </summary>
-    public abstract void Deconstruct(out bool isEmpty, out T car, out SchemeList<T> cdr);
+    public virtual void DeconstructState(out bool isEmpty, out T car, out SchemeList<T> cdr)
+    {
+        isEmpty = IsEmpty;
+        if (IsEmpty)
+        {
+            car = default!;
+            cdr = Empty;
+        }
+        else
+        {
+            car = Car;
+            cdr = Cdr;
+        }
+    }
+
+    /// <summary>
+    /// Deconstructs the list into head element and tail list.
+    /// E.g. (var head, var tail)
+    /// </summary>
+    public void Deconstruct(out T car1, out SchemeList<T>? cdr)
+    {
+        cdr = ExtractHead(out car1);
+    }
+
+    /// <summary>
+    /// Deconstructs the list into 2 head elements and tail list.
+    /// E.g. (var c1, var c2, var cdr)
+    /// </summary>
+    public void Deconstruct(out T car1, out T car2, out SchemeList<T>? cdr)
+    {
+        car2 = default!;
+        var cur = ExtractHead(out car1);
+        cur = cur?.ExtractHead(out car2);
+        cdr = cur;
+    }
+
+    /// <summary>
+    /// Deconstructs the list into 3 head elements and tail list.
+    /// E.g. (var c1, var c2, var c3, var cdr)
+    /// </summary>
+    public void Deconstruct(out T car1, out T car2, out T car3, out SchemeList<T>? cdr)
+    {
+        car2 = default!;
+        car3 = default!;
+        var cur = ExtractHead(out car1);
+        cur = cur?.ExtractHead(out car2);
+        cur = cur?.ExtractHead(out car3);
+        cdr = cur;
+    }
+
+    /// <summary>
+    /// Deconstructs the list into 4 head elements and tail list.
+    /// </summary>
+    public void Deconstruct(out T car1, out T car2, out T car3, out T car4, out SchemeList<T>? cdr)
+    {
+        car2 = default!;
+        car3 = default!;
+        car4 = default!;
+        var cur = ExtractHead(out car1);
+        cur = cur?.ExtractHead(out car2);
+        cur = cur?.ExtractHead(out car3);
+        cur = cur?.ExtractHead(out car4);
+        cdr = cur;
+    }
+
+    /// <summary>
+    /// Deconstructs the list into 5 head elements and tail list.
+    /// </summary>
+    public void Deconstruct(out T car1, out T car2, out T car3, out T car4, out T car5, out SchemeList<T>? cdr)
+    {
+        car2 = default!;
+        car3 = default!;
+        car4 = default!;
+        car5 = default!;
+        var cur = ExtractHead(out car1);
+        cur = cur?.ExtractHead(out car2);
+        cur = cur?.ExtractHead(out car3);
+        cur = cur?.ExtractHead(out car4);
+        cur = cur?.ExtractHead(out car5);
+        cdr = cur;
+    }
+
+    /// <summary>
+    /// Deconstructs the list into 6 head elements and tail list.
+    /// </summary>
+    public void Deconstruct(out T car1, out T car2, out T car3, out T car4, out T car5, out T car6, out SchemeList<T>? cdr)
+    {
+        car2 = default!;
+        car3 = default!;
+        car4 = default!;
+        car5 = default!;
+        car6 = default!;
+        var cur = ExtractHead(out car1);
+        cur = cur?.ExtractHead(out car2);
+        cur = cur?.ExtractHead(out car3);
+        cur = cur?.ExtractHead(out car4);
+        cur = cur?.ExtractHead(out car5);
+        cur = cur?.ExtractHead(out car6);
+        cdr = cur;
+    }
+
+    /// <summary>
+    /// Helper method to safely extract the head element and return the tail.
+    /// Returns null if the list is empty to allow C# pattern matching to fail on non-null tail patterns.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private SchemeList<T>? ExtractHead(out T item)
+    {
+        if (IsEmpty)
+        {
+            item = default!;
+            return null;
+        }
+        item = Car;
+        return Cdr;
+    }
 
     /// <summary>
     /// Fast, non-recursive left fold over the list elements.
@@ -137,6 +252,56 @@ public abstract class SchemeList<T> : IEnumerable<T>, IEquatable<SchemeList<T>>
             }
             return count;
         }
+    }
+
+    /// <summary>
+    /// Alias for <see cref="Length"/> to support C# collection patterns.
+    /// </summary>
+    public int Count => Length;
+
+    /// <summary>
+    /// Indexer to get element at the specified zero-based index.
+    /// </summary>
+    public T this[int index]
+    {
+        get
+        {
+            if (index < 0) throw new ArgumentOutOfRangeException(nameof(index));
+            var current = this;
+            int i = 0;
+            while (!current.IsEmpty)
+            {
+                if (i == index) return current.Car;
+                i++;
+                current = current.Cdr;
+            }
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+    }
+
+    /// <summary>
+    /// Slice method supporting C# 11+ List Patterns (e.g. `[a, b, .. var rest]`).
+    /// </summary>
+    public SchemeList<T> Slice(int start, int length)
+    {
+        if (start < 0 || length < 0) throw new ArgumentOutOfRangeException();
+        var current = this;
+        int i = 0;
+        while (i < start && !current.IsEmpty)
+        {
+            current = current.Cdr;
+            i++;
+        }
+
+        var buffer = new List<T>(length);
+        while (length > 0 && !current.IsEmpty)
+        {
+            buffer.Add(current.Car);
+            current = current.Cdr;
+            length--;
+        }
+
+        return SchemeList.FromEnumerable(buffer);
     }
 
     /// <summary>
@@ -293,17 +458,8 @@ public sealed class Cons<T> : SchemeList<T>
     public override T Car => _car;
     public override SchemeList<T> Cdr => _cdr;
 
-    /// <summary>
-    /// Deconstructs a Cons cell into its car (head) and cdr (tail) for C# pattern matching.
-    /// E.g.: if (list is Cons&lt;int&gt;(var car, var cdr)) { ... }
-    /// </summary>
-    public void Deconstruct(out T car, out SchemeList<T> cdr)
-    {
-        car = _car;
-        cdr = _cdr;
-    }
 
-    public override void Deconstruct(out bool isEmpty, out T car, out SchemeList<T> cdr)
+    public override void DeconstructState(out bool isEmpty, out T car, out SchemeList<T> cdr)
     {
         isEmpty = false;
         car = _car;
@@ -347,7 +503,7 @@ public sealed class Nil<T> : SchemeList<T>
     public override T Car => throw new InvalidOperationException("Car is not defined on an empty list ()");
     public override SchemeList<T> Cdr => throw new InvalidOperationException("Cdr is not defined on an empty list ()");
 
-    public override void Deconstruct(out bool isEmpty, out T car, out SchemeList<T> cdr)
+    public override void DeconstructState(out bool isEmpty, out T car, out SchemeList<T> cdr)
     {
         isEmpty = true;
         car = default!;

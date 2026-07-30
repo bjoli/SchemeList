@@ -128,7 +128,7 @@ public class SchemeListTests
         if (list is Cons<int>(var head, var tail))
         {
             Assert.Equal(1, head);
-            Assert.Equal(2, tail.Car);
+            Assert.Equal(2, tail!.Car);
         }
         else
         {
@@ -138,7 +138,7 @@ public class SchemeListTests
         // Switch expression with Cons and Nil
         string description = list switch
         {
-            Cons<int>(var h, var t) => $"Head: {h}, Tail Count: {t.Length}",
+            Cons<int>(var h, var t) => $"Head: {h}, Tail Count: {t!.Length}",
             Nil<int> => "Empty",
             _ => "Unknown"
         };
@@ -152,19 +152,82 @@ public class SchemeListTests
         SchemeList<int> empty = Empty<int>();
         SchemeList<int> cons = Cons(42, empty);
 
-        var emptyMatch = empty switch
-        {
-            (true, _, _) => "Is Empty",
-            (false, var car, _) => $"Car: {car}"
-        };
-        Assert.Equal("Is Empty", emptyMatch);
+        empty.DeconstructState(out bool isEmp1, out int car1, out _);
+        Assert.True(isEmp1);
 
-        var consMatch = cons switch
+        cons.DeconstructState(out bool isEmp2, out int car2, out _);
+        Assert.False(isEmp2);
+        Assert.Equal(42, car2);
+    }
+
+    [Fact]
+    public void TestMultiElementDeconstruct()
+    {
+        SchemeList<int> list = [10, 20, 30, 40, 50];
+
+        // 2 head elements + tail
+        var (c1, c2, tail2) = list;
+        Assert.Equal(10, c1);
+        Assert.Equal(20, c2);
+        Assert.Equal(SchemeList.Create([30, 40, 50]), tail2);
+
+        // 3 head elements + tail
+        var (x1, x2, x3, tail3) = list;
+        Assert.Equal(10, x1);
+        Assert.Equal(20, x2);
+        Assert.Equal(30, x3);
+        Assert.Equal(SchemeList.Create([40, 50]), tail3);
+
+        // Pattern matching in switch expression with multi-element deconstruct
+        string result = list switch
         {
-            (true, _, _) => "Is Empty",
-            (false, var car, _) => $"Car: {car}"
+            (10, 20, 30, var rest) => $"Matched first 3 elements, rest length = {rest!.Length}",
+            _ => "No match"
         };
-        Assert.Equal("Car: 42", consMatch);
+        Assert.Equal("Matched first 3 elements, rest length = 2", result);
+    }
+
+    [Fact]
+    public void TestCSharpListPatterns_ExactAndRest()
+    {
+        SchemeList<int> empty = Empty<int>();
+        SchemeList<int> one = [10];
+        SchemeList<int> two = [10, 20];
+        SchemeList<int> three = [10, 20, 30];
+
+        // Match exact number of elements using C# List Patterns []
+        Assert.Equal("Empty", MatchList(empty));
+        Assert.Equal("Exactly 1 item: 10", MatchList(one));
+        Assert.Equal("Exactly 2 items: 10, 20", MatchList(two));
+        Assert.Equal("3 items: 10, 20, rest len = 1", MatchList(three));
+
+        static string MatchList(SchemeList<int> l) => l switch
+        {
+            [] => "Empty",
+            [var a] => $"Exactly 1 item: {a}",
+            [var a, var b] => $"Exactly 2 items: {a}, {b}",
+            [var a, var b, .. var rest] => $"3 items: {a}, {b}, rest len = {rest.Length}"
+        };
+    }
+
+    [Fact]
+    public void TestDeconstructFailureOnInsufficientElements()
+    {
+        SchemeList<int> single = [42]; // Only 1 element
+
+        // Attempting to match 3 elements using non-null rest check should FAIL and fall through to default
+        string result = single switch
+        {
+            // Requires 3 elements (c1, c2, c3). Since single has only 1 element, cdr is null, so { } rest fails!
+            (var c1, var c2, var c3, { } rest) => "Matched 3 elements",
+            // Requires 2 elements (c1, c2). Since single has only 1 element, cdr is null, so { } rest fails!
+            (var c1, var c2, { } rest) => "Matched 2 elements",
+            // Requires 1 element (c1). Single has 1 element, so cdr is Empty (non-null), { } rest succeeds!
+            (var c1, { } rest) => $"Matched 1 element: {c1}",
+            _ => "Fall through"
+        };
+
+        Assert.Equal("Matched 1 element: 42", result);
     }
 
     [Fact]
