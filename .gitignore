@@ -1,0 +1,11 @@
+# Build results
+[Bb]in/
+[Oo]bj/
+
+# IDE / Editor files
+.idea/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates

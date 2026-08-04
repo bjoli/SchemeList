@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SchemeList/SchemeList.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SchemeList.Tests/SchemeList.Tests.csproj" />
+  </Folder>
+  <Folder Name="/benchmarks/">
+    <Project Path="benchmarks/SchemeList.Benchmarks/SchemeList.Benchmarks.csproj" />
+  </Folder>
+</Solution>

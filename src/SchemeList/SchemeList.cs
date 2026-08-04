@@ -329,6 +329,22 @@ public abstract class SchemeList<T> : IEnumerable<T>, IEquatable<SchemeList<T>>
     }
 
     /// <summary>
+    /// Creates a mutable <see cref="SchemeListBuilder{T}"/> initialized with a copy of this list's elements.
+    /// Subsequent mutations to the builder will not affect this immutable list.
+    /// </summary>
+    public SchemeListBuilder<T> ToBuilder()
+    {
+        var builder = new SchemeListBuilder<T>();
+        var current = this;
+        while (!current.IsEmpty)
+        {
+            builder.Add(current.Car);
+            current = current.Cdr;
+        }
+        return builder;
+    }
+
+    /// <summary>
     /// Filters the list based on a predicate.
     /// </summary>
     public SchemeList<T> Filter(Func<T, bool> predicate)
@@ -445,13 +461,26 @@ public abstract class SchemeList<T> : IEnumerable<T>, IEquatable<SchemeList<T>>
 public sealed class Cons<T> : SchemeList<T>
 {
     private readonly T _car;
-    private readonly SchemeList<T> _cdr;
+    internal SchemeList<T> _cdr;
 
     public Cons(T car, SchemeList<T> cdr)
     {
         ArgumentNullException.ThrowIfNull(cdr);
         _car = car;
         _cdr = cdr;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal Cons(T car)
+    {
+        _car = car;
+        _cdr = Nil<T>.Instance;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal void SetCdr(SchemeList<T> next)
+    {
+        _cdr = next;
     }
 
     public override bool IsEmpty => false;
@@ -726,5 +755,21 @@ public static class SchemeList
             res = Cons(array[i], res);
         }
         return res;
+    }
+
+    /// <summary>
+    /// Creates a new empty <see cref="SchemeListBuilder{T}"/>.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static SchemeListBuilder<T> CreateBuilder<T>() => new SchemeListBuilder<T>();
+
+    /// <summary>
+    /// Creates a mutable <see cref="SchemeListBuilder{T}"/> initialized with a copy of the specified list.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static SchemeListBuilder<T> ToBuilder<T>(SchemeList<T> list)
+    {
+        ArgumentNullException.ThrowIfNull(list);
+        return list.ToBuilder();
     }
 }
