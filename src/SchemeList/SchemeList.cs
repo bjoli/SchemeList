@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -14,22 +15,59 @@ namespace SchemeList;
 [CollectionBuilder(typeof(SchemeList), nameof(SchemeList.Create))]
 public abstract class SchemeList<T> : IEnumerable<T>, IEquatable<SchemeList<T>>
 {
+    // The fields of a cell are declared here and not in Cons<T>, so that Car,
+    // Cdr and IsEmpty are field reads and not virtual calls. The empty list is
+    // the only node whose _cdr is null.
+    internal readonly T _car;
+    internal SchemeList<T>? _cdr;
+
+    private protected SchemeList(T car, SchemeList<T>? cdr)
+    {
+        _car = car;
+        _cdr = cdr;
+    }
+
     /// <summary>
     /// Returns true if the list is empty (Nil); otherwise false.
     /// </summary>
-    public abstract bool IsEmpty { get; }
+    public bool IsEmpty
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _cdr is null;
+    }
 
     /// <summary>
     /// Gets the first element of the cons cell (Car / Head).
     /// Throws <see cref="InvalidOperationException"/> if the list is empty.
     /// </summary>
-    public abstract T Car { get; }
+    public T Car
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get
+        {
+            if (_cdr is null) ThrowEmpty(nameof(Car));
+            return _car;
+        }
+    }
 
     /// <summary>
     /// Gets the rest of the list (Cdr / Tail).
     /// Throws <see cref="InvalidOperationException"/> if the list is empty.
     /// </summary>
-    public abstract SchemeList<T> Cdr { get; }
+    public SchemeList<T> Cdr
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get
+        {
+            var cdr = _cdr;
+            if (cdr is null) ThrowEmpty(nameof(Cdr));
+            return cdr;
+        }
+    }
+
+    [DoesNotReturn, MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowEmpty(string operation) =>
+        throw new InvalidOperationException($"{operation} is not defined on an empty list ()");
 
     /// <summary>
     /// Alias for <see cref="Car"/>.
@@ -49,19 +87,11 @@ public abstract class SchemeList<T> : IEnumerable<T>, IEquatable<SchemeList<T>>
     /// <summary>
     /// Deconstructs the list into boolean state, car, and cdr.
     /// </summary>
-    public virtual void DeconstructState(out bool isEmpty, out T car, out SchemeList<T> cdr)
+    public void DeconstructState(out bool isEmpty, out T car, out SchemeList<T> cdr)
     {
-        isEmpty = IsEmpty;
-        if (IsEmpty)
-        {
-            car = default!;
-            cdr = Empty;
-        }
-        else
-        {
-            car = Car;
-            cdr = Cdr;
-        }
+        isEmpty = _cdr is null;
+        car = _car;
+        cdr = _cdr ?? this;
     }
 
     /// <summary>
@@ -460,39 +490,25 @@ public abstract class SchemeList<T> : IEnumerable<T>, IEquatable<SchemeList<T>>
 /// <typeparam name="T">The type of the Car element.</typeparam>
 public sealed class Cons<T> : SchemeList<T>
 {
-    private readonly T _car;
-    internal SchemeList<T> _cdr;
-
+    // A null cdr would make this cell read as the empty list, so it is refused.
     public Cons(T car, SchemeList<T> cdr)
+        : base(car, cdr ?? throw new ArgumentNullException(nameof(cdr)))
     {
-        ArgumentNullException.ThrowIfNull(cdr);
-        _car = car;
-        _cdr = cdr;
     }
 
+    // A cell for SchemeListBuilder, with a null cdr. The cell reads as the
+    // empty list until the builder sets its cdr, so it must not be visible
+    // outside the builder before then.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal Cons(T car)
+        : base(car, null)
     {
-        _car = car;
-        _cdr = Nil<T>.Instance;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void SetCdr(SchemeList<T> next)
     {
         _cdr = next;
-    }
-
-    public override bool IsEmpty => false;
-    public override T Car => _car;
-    public override SchemeList<T> Cdr => _cdr;
-
-
-    public override void DeconstructState(out bool isEmpty, out T car, out SchemeList<T> cdr)
-    {
-        isEmpty = false;
-        car = _car;
-        cdr = _cdr;
     }
 
     public override string ToString()
@@ -525,18 +541,9 @@ public sealed class Nil<T> : SchemeList<T>
     /// </summary>
     public static Nil<T> Instance { get; } = new Nil<T>();
 
-    public Nil() { }
-
-    public override bool IsEmpty => true;
-
-    public override T Car => throw new InvalidOperationException("Car is not defined on an empty list ()");
-    public override SchemeList<T> Cdr => throw new InvalidOperationException("Cdr is not defined on an empty list ()");
-
-    public override void DeconstructState(out bool isEmpty, out T car, out SchemeList<T> cdr)
+    public Nil()
+        : base(default!, null)
     {
-        isEmpty = true;
-        car = default!;
-        cdr = this;
     }
 
     public override bool Equals(SchemeList<T>? other)

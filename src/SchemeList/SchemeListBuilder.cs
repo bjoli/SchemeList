@@ -10,6 +10,13 @@ namespace SchemeList;
 /// by mutating the tail cons cell until converted.
 /// </summary>
 /// <typeparam name="T">The type of elements in the list.</typeparam>
+/// <remarks>
+/// The last cell has a null cdr until <see cref="ToSchemeList"/> sets it to the
+/// empty list. Each <see cref="Add"/> thus writes one reference less than
+/// with the empty list in the cdr: a null store needs no GC write barrier.
+/// It also does not read <c>Nil&lt;T&gt;.Instance</c>, which in shared generic
+/// code needs a runtime type lookup.
+/// </remarks>
 public sealed class SchemeListBuilder<T> : IEnumerable<T>, IReadOnlyCollection<T>
 {
     private Cons<T>? _head;
@@ -137,6 +144,7 @@ public sealed class SchemeListBuilder<T> : IEnumerable<T>, IReadOnlyCollection<T
             return SchemeList<T>.Empty;
         }
 
+        _tail!._cdr = SchemeList<T>.Empty;
         var result = _head;
         _head = null;
         _tail = null;
@@ -164,12 +172,14 @@ public sealed class SchemeListBuilder<T> : IEnumerable<T>, IReadOnlyCollection<T
     {
         EnsureNotInvalidated();
 
+        // The cells do not end in the empty list yet, so the walk reads the
+        // fields and stops at the null cdr of the last cell.
         SchemeList<T>? current = _head;
-        while (current is not null && !current.IsEmpty)
+        while (current is not null)
         {
             EnsureNotInvalidated();
-            yield return current.Car;
-            current = current.Cdr;
+            yield return current._car;
+            current = current._cdr;
         }
     }
 
