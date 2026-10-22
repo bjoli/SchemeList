@@ -13,6 +13,7 @@ namespace SchemeList;
 /// </summary>
 /// <typeparam name="T">The type of elements in the list.</typeparam>
 [CollectionBuilder(typeof(SchemeList), nameof(SchemeList.Create))]
+[NonUserCode]
 public abstract class SchemeList<T> : IEnumerable<T>, IEquatable<SchemeList<T>>
 {
     // The fields of a cell are declared here and not in Cons<T>, so that Car,
@@ -355,7 +356,7 @@ public abstract class SchemeList<T> : IEnumerable<T>, IEquatable<SchemeList<T>>
     public SchemeList<U> Map<U>(Func<T, U> selector)
     {
         ArgumentNullException.ThrowIfNull(selector);
-        return FoldRight(SchemeList<U>.Empty, (item, acc) => SchemeList.Cons(selector(item), acc));
+        return FoldRight(SchemeList<U>.Empty, [NonUserCode] (item, acc) => SchemeList.Cons(selector(item), acc));
     }
 
     /// <summary>
@@ -380,7 +381,7 @@ public abstract class SchemeList<T> : IEnumerable<T>, IEquatable<SchemeList<T>>
     public SchemeList<T> Filter(Func<T, bool> predicate)
     {
         ArgumentNullException.ThrowIfNull(predicate);
-        return FoldRight(SchemeList<T>.Empty, (item, acc) => predicate(item) ? SchemeList.Cons(item, acc) : acc);
+        return FoldRight(SchemeList<T>.Empty, [NonUserCode] (item, acc) => predicate(item) ? SchemeList.Cons(item, acc) : acc);
     }
 
     /// <summary>
@@ -442,6 +443,7 @@ public abstract class SchemeList<T> : IEnumerable<T>, IEquatable<SchemeList<T>>
     /// <summary>
     /// High-performance allocation-free struct enumerator for foreach iteration.
     /// </summary>
+    [NonUserCode]
     public struct Enumerator : IEnumerator<T>
     {
         private SchemeList<T> _currentList;
@@ -488,6 +490,7 @@ public abstract class SchemeList<T> : IEnumerable<T>, IEquatable<SchemeList<T>>
 /// Represents a non-empty Cons cell in a Scheme list.
 /// </summary>
 /// <typeparam name="T">The type of the Car element.</typeparam>
+[NonUserCode]
 public sealed class Cons<T> : SchemeList<T>
 {
     // A null cdr would make this cell read as the empty list, so it is refused.
@@ -534,6 +537,7 @@ public sealed class Cons<T> : SchemeList<T>
 /// All empty lists are equal.
 /// </summary>
 /// <typeparam name="T">The type of elements.</typeparam>
+[NonUserCode]
 public sealed class Nil<T> : SchemeList<T>
 {
     /// <summary>
@@ -564,6 +568,7 @@ public sealed class Nil<T> : SchemeList<T>
 /// <summary>
 /// Static helper class providing Scheme primitives, creation methods, and CollectionBuilder support.
 /// </summary>
+[NonUserCode]
 public static class SchemeList
 {
     /// <summary>

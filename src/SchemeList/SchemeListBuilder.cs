@@ -17,6 +17,7 @@ namespace SchemeList;
 /// It also does not read <c>Nil&lt;T&gt;.Instance</c>, which in shared generic
 /// code needs a runtime type lookup.
 /// </remarks>
+[NonUserCode]
 public sealed class SchemeListBuilder<T> : IEnumerable<T>, IReadOnlyCollection<T>
 {
     private Cons<T>? _head;
